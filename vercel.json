@@ -1,5 +1,5 @@
 {
-  "outputDirectory": "QABuddy/docs",
+  "rootDirectory": "QABuddy/docs",
   "cleanUrls": true,
   "trailingSlash": false
 }
