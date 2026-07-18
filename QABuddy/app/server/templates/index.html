@@ -77,14 +77,17 @@
     <div class="rail-foot">
       <div>llm <span class="mono">{{ llm_model }}</span></div>
       <div>embed <span class="mono">{{ embed_model }}</span></div>
-      <div class="rail-foot-link"><a href="/architecture" target="_blank">architecture &amp; docs ↗</a></div>
     </div>
   </aside>
 
   <main class="stage">
     <header class="topbar">
       <span class="crumb">understand &rarr; retrieve &rarr; rerank &rarr; answer with sources</span>
-      <span class="topbar-right" id="status-line">boot<span class="caret">▌</span></span>
+      <span class="topbar-right">
+        <a class="arch-link" href="/architecture" target="_blank">architecture ↗</a>
+        <span class="topbar-sep">|</span>
+        <span id="status-line">boot<span class="caret">▌</span></span>
+      </span>
     </header>
 
     <div class="thread" id="thread">
