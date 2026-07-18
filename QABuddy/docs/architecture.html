@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QABuddy.AI — Architecture & Backend Documentation</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #faf9f7;
+    --surface: #ffffff;
+    --border: #e5e3dc;
+    --text: #1a1a1a;
+    --text-secondary: #6b6660;
+    --accent: #2d6ff7;
+    --accent-light: #eef3ff;
+    --accent-dark: #1a3a7a;
+    --code-bg: #f4f2ee;
+    --green: #16a34a;
+    --orange: #ea580c;
+    --purple: #7c3aed;
+    --red: #dc2626;
+    --teal: #0d9488;
+    --gray: #78716c;
+    --s1: #2563eb; --s2: #059669; --s3: #d97706; --s4: #dc2626; --s5: #7c3aed;
+    --s6: #0891b2; --s7: #db2777; --s8: #65a30d; --s9: #9333ea; --s10: #ea580c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.7;
+  }
+  header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #fff; padding: 60px 24px 48px; text-align: center;
+  }
+  header h1 { font-size: 2.8rem; font-weight: 700; letter-spacing: -0.5px; }
+  header p { font-size: 1.2rem; color: #94a3b8; margin-top: 8px; max-width: 700px; margin-inline: auto; }
+  header .badges { margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  header .badge {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 500;
+  }
+  nav {
+    position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 24px; overflow-x: auto; white-space: nowrap;
+  }
+  nav a {
+    display: inline-block; padding: 14px 18px; text-decoration: none; color: var(--text-secondary);
+    font-size: 0.9rem; font-weight: 500; border-bottom: 2px solid transparent; transition: all 0.15s;
+  }
+  nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  main { max-width: 1050px; margin: 0 auto; padding: 40px 24px 80px; }
+  section { margin-bottom: 56px; }
+  h2 {
+    font-size: 1.8rem; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 16px;
+    padding-bottom: 12px; border-bottom: 2px solid var(--border);
+  }
+  h3 { font-size: 1.25rem; font-weight: 600; margin: 28px 0 12px; color: var(--accent-dark); }
+  h4 { font-size: 1.05rem; font-weight: 600; margin: 20px 0 8px; }
+  p { margin-bottom: 12px; color: var(--text-secondary); }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 24px; margin-bottom: 20px;
+  }
+  .card h3 { margin-top: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 12px 0; }
+  th {
+    background: var(--code-bg); text-align: left; padding: 10px 14px;
+    font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--text-secondary); border-bottom: 2px solid var(--border);
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  code {
+    background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
+    font-family: 'IBM Plex Mono', 'Fira Code', monospace; font-size: 0.88em; color: var(--accent-dark);
+  }
+  pre {
+    background: #1e293b; color: #e2e8f0; padding: 20px 24px; border-radius: 8px;
+    overflow-x: auto; font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem;
+    line-height: 1.6; margin: 12px 0;
+  }
+  .mermaid-container {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 24px; margin: 20px 0; overflow-x: auto;
+  }
+  .source-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;
+  }
+  .source-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 18px;
+    border-left: 4px solid var(--accent);
+  }
+  .source-card .num { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .source-card .label { font-size: 1rem; font-weight: 600; margin: 4px 0; }
+  .source-card .detail { font-size: 0.85rem; color: var(--text-secondary); }
+  .endpoint-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;
+  }
+  .endpoint-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 18px;
+  }
+  .endpoint-card .method {
+    display: inline-block; padding: 2px 10px; border-radius: 4px;
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-right: 8px;
+  }
+  .method-get { background: #dcfce7; color: #166534; }
+  .method-post { background: #fef08a; color: #854d0e; }
+  .endpoint-card .path { font-family: 'IBM Plex Mono', monospace; font-size: 0.92rem; font-weight: 600; }
+  .endpoint-card .desc { font-size: 0.85rem; color: var(--text-secondary); margin-top: 6px; }
+  .step-flow {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 16px 0;
+    justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem;
+  }
+  .step-box {
+    background: var(--surface); border: 2px solid var(--border); border-radius: 8px;
+    padding: 10px 16px; text-align: center; white-space: nowrap; font-weight: 600;
+  }
+  .step-arrow { color: var(--accent); font-weight: 700; font-size: 1.2rem; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+  footer {
+    text-align: center; padding: 40px 24px; color: var(--text-secondary); font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+  }
+  .note {
+    background: var(--accent-light); border-left: 4px solid var(--accent);
+    padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 0.9rem;
+  }
+  ul, ol { padding-left: 22px; margin-bottom: 12px; color: var(--text-secondary); }
+  li { margin-bottom: 4px; }
+  .tag {
+    display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;
+    font-weight: 600; margin-right: 4px;
+  }
+  .tag-green { background: #dcfce7; color: #166534; }
+  .tag-orange { background: #fff7ed; color: #9a3412; }
+  .tag-purple { background: #f3e8ff; color: #6b21a8; }
+  .tag-blue { background: #dbeafe; color: #1e40af; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>QABuddy.AI</h1>
+  <p>Multi-source Hybrid RAG system for QA engineers — ask one question, get a cited answer grounded in 10 knowledge sources.</p>
+  <div class="badges">
+    <span class="badge">Python 3.12</span>
+    <span class="badge">Flask + SSE</span>
+    <span class="badge">BGE-M3</span>
+    <span class="badge">Qdrant</span>
+    <span class="badge">BGE-Reranker-v2-m3</span>
+    <span class="badge">Groq LLM</span>
+    <span class="badge">Docker Compose</span>
+  </div>
+</header>
+
+<nav>
+  <a href="#architecture">Architecture</a>
+  <a href="#data-flow">Data Flow</a>
+  <a href="#tech-stack">Tech Stack</a>
+  <a href="#ingestion">Ingestion</a>
+  <a href="#retrieval">Retrieval</a>
+  <a href="#api">API Reference</a>
+  <a href="#deployment">Deployment</a>
+  <a href="#decisions">Design Decisions</a>
+</nav>
+
+<main>
+
+<!-- ===== ARCHITECTURE ===== -->
+<section id="architecture">
+  <h2>System Architecture</h2>
+  <p>The complete QABuddy.AI architecture: ingestion pipeline on the left ingests 10 knowledge sources into the Qdrant vector store. The retrieval pipeline on the right serves cited answers through a Flask SSE server.</p>
+  <div class="mermaid-container">
+<div class="mermaid">
+flowchart TB
+    subgraph SOURCES["🔗 10 Knowledge Sources"]
+        S1["01 Selenium Framework\n(Java code repo)"]
+        S2["02 Playwright Framework\n(TS code repo)"]
+        S3["03 Test Cases\n(CSV, 500 rows)"]
+        S4["04 JIRA Tickets\n(REST API / MCP)"]
+        S5["05 Company Docs\n(PDF, MD)"]
+        S6["06 Figma Designs\n(Phase 2)"]
+        S7["07 Meeting Notes\n(TXT transcripts)"]
+        S8["08 Lucid Charts\n(Text exports)"]
+        S9["09 PRD / SRS / FRD\n(PDF documents)"]
+        S10["10 Jenkins Logs\n(Console + JUnit)"]
+    end
+
+    subgraph INGESTION["⚙️ Ingestion Pipeline"]
+        LOAD["Per-source Loaders\n(parse → chunk → Doc[])"]
+        MANIFEST["Manifest Diff\n(SHA-256 signatures)"]
+        EMBED["BGE-M3 Embedder\n(dense 1024d + sparse lexical)"]
+    end
+
+    subgraph STORE["🗄️ Qdrant Vector Store"]
+        QDRANT[("qabuddy_kb\n(named vectors)\ndense + sparse")]
+    end
+
+    subgraph RETRIEVAL["🧠 Retrieval Pipeline"]
+        CONDENSE["Query Condenser\n(LLM: resolve pronouns)"]
+        REWRITE["Query Rewriter\n(LLM: 3 alt phrasings)"]
+        HYBRID["Hybrid Search\n(dense ANN + sparse BM25)"]
+        FUSE["RRF Fusion\n(k=60 rank merge)"]
+        RERANK["BGE-Reranker-v2-m3\n(cross-encoder scoring)"]
+    end
+
+    subgraph SERVER["🌐 Flask Server"]
+        FLASK["Flask App\n(SSE streaming)"]
+        UI["Chat UI\n(HTML + vanilla JS)"]
+    end
+
+    subgraph LLM["🤖 LLM Brain"]
+        GROQ["Groq API\nopenai/gpt-oss-120b"]
+    end
+
+    S1 & S2 & S3 & S4 & S5 & S6 & S7 & S8 & S9 & S10 --> LOAD
+    LOAD --> MANIFEST
+    MANIFEST --> EMBED
+    EMBED --> QDRANT
+    QDRANT --> HYBRID
+    CONDENSE --> REWRITE
+    REWRITE --> HYBRID
+    HYBRID --> FUSE
+    FUSE --> RERANK
+    RERANK --> GROQ
+    USER(["👤 QA Engineer\nasks a question"]) --> FLASK
+    FLASK --> CONDENSE
+    FLASK -- SSE stream --> UI
+    UI -- rendered answer\nwith [n] citations --> USER
+    GROQ -- stream tokens --> FLASK
+
+    style SOURCES fill:#f0f9ff,stroke:#bae6fd
+    style INGESTION fill:#fef3c7,stroke:#fcd34d
+    style STORE fill:#f0fdf4,stroke:#86efac
+    style RETRIEVAL fill:#faf5ff,stroke:#d8b4fe
+    style SERVER fill:#fff7ed,stroke:#fdba74
+    style LLM fill:#fef2f2,stroke:#fca5a5
+</div>
+  </div>
+</section>
+
+<!-- ===== DATA FLOW ===== -->
+<section id="data-flow">
+  <h2>End-to-End Data Flow</h2>
+  <p>Detailed sequence showing how a user's question flows through the system — from browser to answer with citations.</p>
+  <div class="mermaid-container">
+<div class="mermaid">
+sequenceDiagram
+    actor User as 👤 QA Engineer
+    participant Browser as 🌐 Chat UI (JS)
+    participant Flask as 🐍 Flask Server
+    participant Retrieve as 🧠 Retrieval Pipeline
+    participant Qdrant as 🗄️ Qdrant
+    participant Reranker as 🔍 BGE-Reranker
+    participant Groq as 🤖 Groq LLM
+
+    User->>Browser: Types question + selects sources
+    Browser->>Flask: POST /api/chat {question, sources[], mode, history[]}
+    Flask->>Retrieve: ask_events(question, sources, mode, history)
+
+    Note over Retrieve: 1. CONDENSE
+    Retrieve->>Groq: Rewrite follow-up → standalone query
+    Groq-->>Retrieve: Standalone question
+
+    Note over Retrieve: 2. REWRITE
+    Retrieve->>Groq: Generate 3 alternate phrasings
+    Groq-->>Retrieve: [rewrite1, rewrite2, rewrite3]
+
+    Note over Retrieve: 3. HYBRID SEARCH
+    par Dense Search
+        Retrieve->>Qdrant: dense_search(embed(qv), top_n=20, src_filter)
+        Qdrant-->>Retrieve: Top-20 dense hits
+    and Sparse Search
+        Retrieve->>Qdrant: sparse_search(sparse_lex(qv), top_n=20, src_filter)
+        Qdrant-->>Retrieve: Top-20 sparse hits
+    end
+
+    Note over Retrieve: 4. RRF Fusion (k=60)
+    Note over Retrieve: 5. RE-RANK (top-12 → top-6)
+    Retrieve->>Reranker: rerank(query, 12 candidates)
+    Reranker-->>Retrieve: Top-6 scored [0..1]
+
+    alt max score < 0.22
+        Retrieve-->>Flask: "not in knowledge base" message
+    else
+        Note over Retrieve: 6. BUILD PROMPT (6 chunks + glossary + mode)
+        Retrieve->>Groq: chat_stream(messages)
+        Groq-->>Retrieve: token* stream
+    end
+
+    Retrieve-->>Flask: SSE: meta → citations → token* → done
+    Flask-->>Browser: SSE: text/event-stream
+    Browser->>Browser: Render markdown with clickable [n] citations
+    Browser-->>User: Cited answer + source cards
+</div>
+  </div>
+</section>
+
+<!-- ===== TECH STACK ===== -->
+<section id="tech-stack">
+  <h2>Technology Stack</h2>
+  <table>
+    <thead>
+      <tr><th>Component</th><th>Technology</th><th>Version</th><th>Purpose</th><th>License</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Backend Framework</strong></td><td>Flask</td><td>≥ 3.0</td><td>HTTP server with SSE streaming endpoints</td><td>BSD</td></tr>
+      <tr><td><strong>WSGI Server</strong></td><td>Gunicorn</td><td>≥ 22.0</td><td>Production server (1 worker, 8 threads, 300s timeout)</td><td>MIT</td></tr>
+      <tr><td><strong>Embedding Model</strong></td><td>BGE-M3 (FlagEmbedding)</td><td>≥ 1.2.10</td><td>Hybrid embeddings: dense 1024d + sparse lexical in one pass</td><td>MIT</td></tr>
+      <tr><td><strong>Vector Database</strong></td><td>Qdrant</td><td>≥ 1.11</td><td>Hybrid vector store with named vectors, payload indexes, RRF built-in support</td><td>Apache 2.0</td></tr>
+      <tr><td><strong>Reranker</strong></td><td>BGE-Reranker-v2-m3</td><td>—</td><td>Cross-encoder for scoring query–chunk relevance (raw transformers)</td><td>MIT</td></tr>
+      <tr><td><strong>LLM</strong></td><td>Groq (gpt-oss-120b)</td><td>—</td><td>Open-weight LLM via OpenAI-compatible API for generation</td><td>Apache 2.0</td></tr>
+      <tr><td><strong>ML Runtime</strong></td><td>PyTorch + Transformers</td><td>≥ 4.44</td><td>CPU-only inference for embedding and reranker models</td><td>BSD / Apache 2.0</td></tr>
+      <tr><td><strong>PDF Parser</strong></td><td>PyMuPDF (fitz)</td><td>≥ 1.24</td><td>PDF text extraction for company docs and PRDs</td><td>AGPL / Commercial</td></tr>
+      <tr><td><strong>CSV/XLSX</strong></td><td>Pandas + OpenPyXL</td><td>≥ 2.0 / 3.1</td><td>Test case import from spreadsheets</td><td>BSD / MIT</td></tr>
+      <tr><td><strong>Frontend</strong></td><td>Vanilla HTML/CSS/JS</td><td>—</td><td>SSE chat client with markdown rendering, citation cards, ingest panel</td><td>—</td></tr>
+      <tr><td><strong>Reverse Proxy</strong></td><td>Caddy</td><td>2</td><td>TLS termination + basic auth for production deployments</td><td>Apache 2.0</td></tr>
+      <tr><td><strong>Containerization</strong></td><td>Docker Compose</td><td>—</td><td>3 services: qdrant + app (gunicorn) + caddy</td><td>—</td></tr>
+      <tr><td><strong>Testing</strong></td><td>Pytest</td><td>≥ 8.0</td><td>12 unit tests covering chunking and loaders</td><td>MIT</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ===== INGESTION ===== -->
+<section id="ingestion">
+  <h2>Ingestion Pipeline — Deep Dive</h2>
+
+  <div class="mermaid-container">
+<div class="mermaid">
+flowchart LR
+    subgraph INPUT["Data Sources"]
+        FILES["Files in data/0X_*/"]
+        JIRA["JIRA REST API"]
+    end
+    subgraph LOAD["Load & Chunk"]
+        direction TB
+        CODE["split_code()\nbrace-aware method/class extraction"]
+        TC["load_testcases()\none row = one chunk"]
+        JIR["load_jira()\none ticket = one chunk"]
+        DOC["chunk_doc()\nheading-aware prose"]
+        TRANS["split_transcript()\nspeaker-turn windows"]
+        LOG["split_log_failures()\nfailure block extraction"]
+    end
+    MANIFEST["SHA-256 Diff\nvs .ingest_manifest.json"]
+    EMBEDDING["BGE-M3 encode()\ndense[1024] + sparse[indices+values]"]
+    UPSERT["Qdrant upsert\nidempotent UUID5 points"]
+
+    INPUT --> LOAD
+    LOAD --> MANIFEST
+    MANIFEST --> EMBEDDING
+    EMBEDDING --> UPSERT
+</div>
+  </div>
+
+  <h3>10 Knowledge Sources & Chunking Strategies</h3>
+  <div class="source-grid">
+    <div class="source-card" style="border-left-color: var(--s1)">
+      <div class="num" style="color:var(--s1)">Source 01</div>
+      <div class="label">Selenium Framework</div>
+      <div class="detail"><strong>Input:</strong> Java code repo<br><strong>Chunker:</strong> <code>split_code()</code> — brace-matching for methods/classes, nesting resolution, fallback sliding windows<br><strong>Chunk:</strong> 250–2000 chars per unit<br><strong>Payload:</strong> file path, line numbers, language, repo</div>
+    </div>
+    <div class="source-card" style="border-left-color: var(--s2)">
+      <div class="num" style="color:var(--s2)">Source 02</div>
+      <div class="label">Playwright Framework</div>
+      <div class="detail"><strong>Input:</strong> TypeScript code repo<br><strong>Chunker:</strong> <code>split_code()</code> — TS-aware AST-free splitting<br><strong>Chunk:</strong> 250–2000 chars per unit<br><strong>Payload:</strong> file path, line numbers, language, repo</div>
+    </div>
+    <div class="source-card" style="border-left-color: var(--s3)">
+      <div class="num" style="color:var(--s3)">Source 03</div>
+      <div class="label">Test Cases</div>
+      <div class="detail"><strong>Input:</strong> CSV (Pandas)<br><strong>Chunker:</strong> One row = one chunk, auto-detect ID/module columns<br><strong>Chunk:</strong> ~1400 chars<br><strong>Payload:</strong> test case ID, module, data source<br><strong>Count:</strong> 500 test cases</div>
+    </div>
+    <div class="source-card" style="border-left-color: var(--s4)">
+      <div class="num" style="color:var(--s4)">Source 04</div>
+      <div class="label">JIRA Tickets</div>
+      <div class="detail"><strong>Input:</strong> JSON dumps from REST API or MCP <code>{tickets: [...]}</code><br><strong>Chunker:</strong> One ticket = one chunk, comments spill<br><strong>Chunk:</strong> ~4800 chars<br><strong>Payload:</strong> ticket key, status, priority, labels, components</div>
+    </div>
+    <div class="source-card" style="border-left-color: var(--s5)">
+      <div class="num" style="color:var(--s5)">Source 05</div>
+      <div class="label">Company Docs</div>
+      <div class="detail"><strong>Input:</strong> PDF (PyMuPDF), Markdown, TXT<br><strong>Chunker:</strong> <code>chunk_doc()</code> — heading-aware, splits at <code>#</code>/<code>##</code> boundaries then prose-chunks sections<br><strong>Chunk:</strong> 2048 chars, 300 overlap (~15%)</div>
+    </div>
+    <div class="source-card" style="border-left-color: var(--s6)">
+      <div class="num" style="color:var(--s6)">Source 06</div>
+      <div class="label">Figma Designs</div>
+      <div class="detail"><strong>Input:</strong> MD design descriptions (manually documented UI mocks)<br><strong>Chunker:</strong> <code>chunk_doc()</code> — heading-aware prose chunking<br><strong>Chunk:</strong> 2048 chars, 300 overlap<br><strong>Phase 2:</strong> Figma REST API → vision model description (planned)</div>
+    </div>
+    <div class="source-card" style="border-left-color: var(--s7)">
+      <div class="num" style="color:var(--s7)">Source 07</div>
+      <div class="label">Meeting Notes</div>
+      <div class="detail"><strong>Input:</strong> MD meeting transcripts with speaker labels<br><strong>Chunker:</strong> <code>split_transcript()</code> — speaker-turn aware windowing<br><strong>Chunk:</strong> 3600 chars, 480 overlap (~13%)</div>
+    </div>
+    <div class="source-card" style="border-left-color: var(--s8)">
+      <div class="num" style="color:var(--s8)">Source 08</div>
+      <div class="label">Lucid Charts</div>
+      <div class="detail"><strong>Input:</strong> Exported text<br><strong>Chunker:</strong> <code>chunk_doc()</code> — heading-aware prose chunking<br><strong>Chunk:</strong> 2048 chars, 300 overlap</div>
+    </div>
+    <div class="source-card" style="border-left-color: var(--s9)">
+      <div class="num" style="color:var(--s9)">Source 09</div>
+      <div class="label">PRD / SRS / BRD / FRD</div>
+      <div class="detail"><strong>Input:</strong> PDF documents<br><strong>Chunker:</strong> <code>chunk_doc()</code> — PyMuPDF page-by-page → heading-aware prose<br><strong>Chunk:</strong> 2048 chars, 300 overlap</div>
+    </div>
+    <div class="source-card" style="border-left-color: var(--s10)">
+      <div class="num" style="color:var(--s10)">Source 10</div>
+      <div class="label">Jenkins Logs</div>
+      <div class="detail"><strong>Input:</strong> .log, .txt, .xml (JUnit results)<br><strong>Chunker:</strong> <code>split_log_failures()</code> — regex triggers (exceptions, <code>&lt;&lt;&lt; FAILURE!</code>) + build summary<br><strong>Chunk:</strong> 2400 chars max, 12 context lines, 90-day retention filter</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Idempotent Incremental Ingestion</h3>
+    <p>A <strong>manifest file</strong> (<code>data/.ingest_manifest.json</code>) stores SHA-256 content signatures for every file + source combination. On re-ingestion:</p>
+    <div class="step-flow">
+      <span class="step-box">Load docs from source folder</span>
+      <span class="step-arrow">→</span>
+      <span class="step-box">Compute per-file SHA-256</span>
+      <span class="step-arrow">→</span>
+      <span class="step-box">Compare vs manifest</span>
+      <span class="step-arrow">→</span>
+      <span class="step-box"><span class="tag tag-green">NEW/CHANGED</span> → embed + upsert</span>
+      <span class="step-arrow">→</span>
+      <span class="step-box"><span class="tag tag-purple">UNCHANGED</span> → skip</span>
+      <span class="step-arrow">→</span>
+      <span class="step-box"><span class="tag tag-orange">REMOVED</span> → delete from Qdrant</span>
+    </div>
+    <p>Stable <strong>UUID5 IDs</strong> derived from <code>source_type + path + text</code> ensure the same content always maps to the same Qdrant point — idempotent upserts with zero duplicates.</p>
+  </div>
+
+  <div class="note">
+    <strong>Embedding model:</strong> <code>BAAI/bge-m3</code> produces both dense vectors (1024-dimension cosine similarity) and lexical sparse vectors (token-level BM25 weights) in a <strong>single encode pass</strong>. Both are stored as named vectors in Qdrant for hybrid retrieval.
+  </div>
+</section>
+
+<!-- ===== RETRIEVAL ===== -->
+<section id="retrieval">
+  <h2>Retrieval Pipeline — Deep Dive</h2>
+  <div class="mermaid-container">
+<div class="mermaid">
+flowchart TD
+    Q["❓ User Question"] --> C
+    C["1. CONDENSE\nLLM rewrites follow-ups\ninto standalone queries"] --> RW
+    RW["2. REWRITE\nLLM generates 3 alternate\nphrasings for recall"] --> HS
+
+    subgraph HS["3. HYBRID SEARCH"]
+        DENSE["Dense ANN Search\ntop_n=20 candidates\n1024d cosine similarity"]
+        SPARSE["Sparse BM25 Search\ntop_n=20 candidates\nlexical keyword matching"]
+    end
+
+    HS --> RRF["4. RRF FUSION\nReciprocal Rank Fusion (k=60)\nscore = Σ 1/(k + rank + 1)\n→ returns top 12"]
+    RRF --> RR["5. CROSS-ENCODER RERANK\nbge-reranker-v2-m3\nscores 12 candidates → keeps top 6\nsigmoid normalization [0..1]"]
+
+    RR --> THR{"6. THRESHOLD GATE\nmax score < 0.22?"}
+    THR -->|Yes| NOK["⚠️ \"Not in knowledge base\"\n(prevents hallucination)"]
+    THR -->|No| PROMPT["7. PROMPT BUILD\n6 chunks as numbered context\n+ glossary + mode-specific system prompt\n+ last 3 chat turns"]
+    PROMPT --> GEN["8. LLM GENERATION\nGroq gpt-oss-120b\nstreams tokens via SSE"]
+    GEN --> ANSWER["✅ Cited Answer\nwith clickable [n] references"]
+
+    style HS fill:#f0f9ff,stroke:#7dd3fc
+    style RRF fill:#fef3c7,stroke:#fcd34d
+    style RR fill:#faf5ff,stroke:#d8b4fe
+    style THR fill:#fef2f2,stroke:#fca5a5
+    style ANSWER fill:#f0fdf4,stroke:#86efac
+</div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Why Hybrid Search?</h3>
+      <p><strong>Dense search</strong> (semantic) excels at understanding meaning — "login button breaks" matches "authentication widget failure".</p>
+      <p><strong>Sparse search</strong> (lexical/BM25) is essential for exact identifiers — <code>VWO-2002</code>, <code>NullPointerException</code>, <code>#coupon-input</code>. Without it, ticket IDs and exception names would be missed.</p>
+      <p><strong>RRF merge</strong> combines both rankings without score calibration, producing the best of both worlds.</p>
+    </div>
+    <div class="card">
+      <h3>Why Cross-Encoder Rerank?</h3>
+      <p>The vector search ranks by similarity, not relevance. A chunk that's <em>similar</em> to the query might not <em>answer</em> it.</p>
+      <p>The <strong>bge-reranker-v2-m3</strong> cross-encoder reads the full (query, chunk) pair together, scoring actual relevance via sequence classification — not just vector proximity. This catches nuanced mismatches that embedding similarity misses.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Prompt Engineering</h3>
+    <table>
+      <tr><th>Mode</th><th>Trigger</th><th>System Prompt Focus</th></tr>
+      <tr><td><code>answer</code></td><td>Default (no keyword match)</td><td>Concise senior-QA-engineer tone, cite [n] from context only, no guessing</td></tr>
+      <tr><td><code>generate</code></td><td>"create test cases", "write tests", "design scenario"</td><td>Structured output: Title, Preconditions, Steps, Expected Result, Priority, Tags</td></tr>
+      <tr><td><code>review</code></td><td>"review", "missing", "gaps", "coverage"</td><td>Gap analysis: what test areas are under-covered vs requirements</td></tr>
+      <tr><td><code>rca</code></td><td>"root cause", "why did...fail", "analyze flaky"</td><td>Root cause analysis from logs, tickets, and code context</td></tr>
+    </table>
+    <p><strong>Glossary injection:</strong> Company terminology (VWO, RTM, RCA, SDET, POM, Flaky test) is defined in <code>glossary.yaml</code> and injected into the system prompt — <strong>not</strong> embedded in the vector store. This keeps embeddings clean while ensuring the LLM understands org-specific acronyms.</p>
+  </div>
+
+  <div class="card">
+    <h3>Configuration & Tuning</h3>
+    <table>
+      <tr><th>Parameter</th><th>Default</th><th>Purpose</th></tr>
+      <tr><td><code>top_n_hybrid</code></td><td>20</td><td>Candidates per dense/sparse search</td></tr>
+      <tr><td><code>rerank_candidates</code></td><td>12</td><td>Fused candidates fed to cross-encoder</td></tr>
+      <tr><td><code>top_k</code></td><td>6</td><td>Final chunks sent to LLM as context</td></tr>
+      <tr><td><code>rrf_k</code></td><td>60</td><td>RRF smoothing constant</td></tr>
+      <tr><td><code>rewrite_enabled / rewrite_n</code></td><td>true / 3</td><td>Query rewriting with alternate phrasings</td></tr>
+      <tr><td><code>relevance_threshold</code></td><td>0.22</td><td>Max rerank score below this → "not in KB"</td></tr>
+      <tr><td><code>history_turns</code></td><td>3</td><td>Chat conversation context depth</td></tr>
+      <tr><td><code>llm.temperature</code></td><td>0.2</td><td>Low temperature for factual, grounded answers</td></tr>
+      <tr><td><code>llm.max_tokens</code></td><td>1400</td><td>Response length limit</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ===== API REFERENCE ===== -->
+<section id="api">
+  <h2>Backend API Reference</h2>
+  <div class="endpoint-grid">
+    <div class="endpoint-card">
+      <span class="method method-get">GET</span>
+      <span class="path">/</span>
+      <div class="desc">Serves the chat application UI. Jinja2-rendered HTML with source list, mode selector, ingest panel, and chat thread.</div>
+    </div>
+    <div class="endpoint-card">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/health</span>
+      <div class="desc">System health check. Returns LLM key status, model names, Qdrant mode (embedded/server), collection info, and chunk count.</div>
+    </div>
+    <div class="endpoint-card">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/sources</span>
+      <div class="desc">File listing per source folder for the sidebar. Returns file list, file count, and <strong>detail counts</strong> for key sources: <code>detail_count</code> (e.g. 107 tests for Playwright, 500 test cases, 28 tickets) with <code>detail_label</code>.</div>
+    </div>
+    <div class="endpoint-card">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/stats</span>
+      <div class="desc">Chunk counts per source type. Returns <code>{total, by_source: {company_docs: 4, jira_tickets: 3, ...}, labels: {...}}</code></div>
+    </div>
+    <div class="endpoint-card">
+      <span class="method method-post">POST</span>
+      <span class="path">/api/chat</span>
+      <div class="desc"><strong>Main ask endpoint.</strong> Accepts <code>{question, sources[], mode?, history[]}</code>. Streams SSE events: <code>meta → citations → token* → done | error</code>. Each `[n]` citation maps to a source card with snippet and rerank score.</div>
+    </div>
+    <div class="endpoint-card">
+      <span class="method method-post">POST</span>
+      <span class="path">/api/search</span>
+      <div class="desc"><strong>Debug retrieval-only endpoint</strong> (no LLM). Returns embeddings, query rewrites, per-step timings, and ranked results with scores.</div>
+    </div>
+    <div class="endpoint-card">
+      <span class="method method-get">GET</span>
+      <span class="path">/api/ingest</span>
+      <div class="desc"><strong>Ingestion endpoint.</strong> Params: <code>source</code>, <code>limit</code>, <code>force</code>. Runs in a background thread, streams <code>load → diff → embed → done</code> progress events via SSE.</div>
+    </div>
+  </div>
+
+  <h3>SSE Event Format — /api/chat</h3>
+  <pre>data: {"type":"meta","question":"How do I fix VWO-2002?","mode":"rca"}
+
+data: {"type":"citations","items":[...6 chunks...],"rewrites":["..."],"timings":{"embed":0.5,"hybrid":0.2,"rerank":1.3}}
+
+data: {"type":"token","text":"The"}
+
+data: {"type":"token","text":" root"}
+
+data: {"type":"token","text":" cause"}
+
+...
+
+data: {"type":"done","answer":"The root cause of VWO-2002..."}</pre>
+</section>
+
+<!-- ===== DEPLOYMENT ===== -->
+<section id="deployment">
+  <h2>Deployment Architecture</h2>
+  <div class="mermaid-container">
+<div class="mermaid">
+flowchart TB
+    subgraph DROPLET["🖥️ DigitalOcean Droplet / VPS"]
+        subgraph DC["Docker Compose Orchestration"]
+            CADDY["Caddy (Reverse Proxy)\nPorts 80/443\nTLS auto-renewal\nBasic auth"]
+            APP["QABuddy App (Gunicorn)\n1 worker, 8 threads\nPort 5080 (internal)"]
+            QD["Qdrant Server\nPort 6333 (internal)\nNamed vectors"]
+        end
+    end
+
+    CADDY -->|"reverse_proxy"| APP
+    APP -->|"qdrant_client"| QD
+
+    VOL["Docker Volumes\nqdrant_storage: vector data\nhf_cache: HuggingFace models\ncaddy_data: TLS certs"]
+    APP -."mounts".-> VOL
+    QD -."mounts".-> VOL
+    CADDY -."mounts".-> VOL
+
+    APP -.->|"mount (RO)"| DATA["data/0X_*/\n(ingestion payloads)"]
+
+    INTERNET(["🌍 Internet"]) -->|":443"| CADDY
+</div>
+  </div>
+
+  <div class="card">
+    <h3>Docker Compose Stack</h3>
+    <table>
+      <tr><th>Service</th><th>Image / Build</th><th>Ports</th><th>Purpose</th></tr>
+      <tr><td><code>qdrant</code></td><td>qdrant/qdrant:latest</td><td>6333 (internal)</td><td>Vector database server with healthcheck</td></tr>
+      <tr><td><code>app</code></td><td>Dockerfile (Python 3.12-slim)</td><td>5080 (internal)</td><td>Flask app via Gunicorn, CPU-only torch, HuggingFace models from cache volume</td></tr>
+      <tr><td><code>caddy</code></td><td>caddy:2-alpine</td><td>80, 443 (external)</td><td>Auto-TLS reverse proxy with optional basic auth</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Local Dev vs Production</h3>
+    <table>
+      <tr><th></th><th>Local Development</th><th>Production (Docker)</th></tr>
+      <tr><td><strong>Qdrant</strong></td><td>Embedded mode (<code>QDRANT_PATH=./qdrant_data</code>) — one process at a time</td><td>Server mode (<code>QDRANT_URL=http://qdrant:6333</code>) — Docker service</td></tr>
+      <tr><td><strong>Server</strong></td><td><code>python -m app.server.app</code> — Flask dev server</td><td><code>gunicorn -w 1 --threads 8</code> — production WSGI</td></tr>
+      <tr><td><strong>Ingestion</strong></td><td>CLI: <code>python -m app.ingestion.cli ingest --all</code></td><td>UI panel or API: <code>GET /api/ingest</code></td></tr>
+      <tr><td><strong>Access</strong></td><td><code>http://127.0.0.1:5080</code></td><td><code>https://yourdomain.com</code> (Caddy TLS)</td></tr>
+    </table>
+  </div>
+
+  <div class="note">
+    <strong>Backup strategy:</strong> <code>scripts/backup.sh</code> runs nightly — creates Qdrant snapshot (server mode) or tars <code>qdrant_data/</code> (embedded mode), keeps last 14 backups. Configured as a cron job.
+  </div>
+</section>
+
+<!-- ===== DESIGN DECISIONS ===== -->
+<section id="decisions">
+  <h2>Key Design Decisions</h2>
+
+  <div class="card">
+    <h3>1. BGE-M3: Why One Model for Both Dense + Sparse</h3>
+    <p>Most hybrid RAG systems run <strong>two separate models</strong>: one for dense embeddings and one for sparse (BM25/Splade). BGE-M3 produces both in a <strong>single encode pass</strong> — half the latency, half the model memory. The dense vector handles semantic understanding while the sparse lexical weights give exact term matching (critical for ticket keys, exception names, test IDs like <code>VWO-2002</code>).</p>
+  </div>
+
+  <div class="card">
+    <h3>2. Qdrant Named Vectors: Zero-Custom-Index Hybrid</h3>
+    <p>Qdrant's <strong>named vectors</strong> allow storing both dense and sparse embeddings in one point without maintaining separate collections. Queries hit both with one client call. The RRF fusion happens at the application layer for full control over the <code>k</code> parameter.</p>
+  </div>
+
+  <div class="card">
+    <h3>3. Reranker Bypass: Raw Transformers over FlagEmbedding</h3>
+    <p>FlagEmbedding's <code>FlagReranker</code> API broke tokenizer compatibility in v1.4.0. The app bypasses it entirely — loading <code>AutoTokenizer</code> + <code>AutoModelForSequenceClassification</code> directly from HuggingFace transformers. More control, no dependency fragility.</p>
+  </div>
+
+  <div class="card">
+    <h3>4. Relevance Threshold Gate (0.22)</h3>
+    <p>When the best reranker score falls below 0.22, the system responds with <strong>"That topic is not in my knowledge base"</strong> instead of generating from the LLM's parametric knowledge. This prevents hallucination and signals to users that the answer isn't grounded in their actual data.</p>
+  </div>
+
+  <div class="card">
+    <h3>5. Glossary Injection ≠ Embedding</h3>
+    <p>Company-specific terms (VWO, RTM, SDET, POM) are defined in <code>glossary.yaml</code> and injected into the <strong>system prompt only</strong>. They are not embedded into Qdrant vectors. Why? These are <em>domain translations</em>, not retrievable knowledge. Embedding them would pollute the vector space with definitions that the LLM should simply know.</p>
+  </div>
+
+  <div class="card">
+    <h3>6. Idempotent Ingestion with SHA-256 Manifests</h3>
+    <p>Re-ingestion diffs every file against a manifest of content signatures. Only changed files are re-embedded. UUID5 IDs ensure the same content → same Qdrant point → idempotent upserts with zero duplicates. This makes hourly auto-ingestion (Phase 2) practical.</p>
+  </div>
+
+  <div class="card">
+    <h3>7. SSE Streaming Everywhere</h3>
+    <p>Both chat responses and ingestion progress are streamed via <strong>Server-Sent Events</strong>. This avoids HTTP timeouts on long-running operations (LLM generation can take 10-30s, ingestion can take minutes for large repos). The browser connects once and receives events as they happen.</p>
+  </div>
+
+  <div class="card">
+    <h3>8. Dual-Mode Qdrant: Zero Config Change</h3>
+    <p>Set <code>QDRANT_PATH</code> → embedded mode (local dev, zero setup). Set <code>QDRANT_URL</code> → server mode (production, Docker Compose). The <code>Store</code> class handles both through the same <code>QdrantClient</code> API. No code changes needed to switch between local dev and production.</p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <p>QABuddy.AI — Hybrid RAG for QA Engineers | Built with Python, Flask, BGE-M3, Qdrant, and Groq</p>
+</footer>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', themeVariables: {
+    primaryColor: '#eef3ff',
+    primaryBorderColor: '#2d6ff7',
+    primaryTextColor: '#1a1a1a',
+    lineColor: '#94a3b8',
+    secondaryColor: '#fef3c7',
+    tertiaryColor: '#f0fdf4',
+    noteBkgColor: '#eef3ff',
+    noteTextColor: '#1a1a1a',
+    fontSize: '14px'
+  }});
+</script>
+
+</body>
+</html>

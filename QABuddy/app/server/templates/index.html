@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QABuddy.AI — AI-Powered QA Knowledge Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🤖</text></svg>">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand-icon">🤖</div>
+      <div>
+        <div class="brand-name">QABuddy.AI</div>
+        <div class="brand-sub">hybrid RAG for QA</div>
+      </div>
+      <div class="brand-dot" id="health-dot" title="checking..."></div>
+    </div>
+
+    <section class="rail-block">
+      <h3>knowledge base</h3>
+      <ul class="kb-list" id="kb-list">
+        {% for s in sources %}{% if s.active %}
+        <li data-st="{{ s.source_type }}">
+          <div class="kb-row">
+            <input type="checkbox" class="src-filter" value="{{ s.source_type }}" checked>
+            <span class="kb-swatch st-{{ s.source_type }}"></span>
+            <span class="kb-label">{{ s.label }} <span class="kb-detailcount" id="detailcount-{{ s.source_type }}"></span></span>
+            <span class="kb-chunks" id="count-{{ s.source_type }}">–</span>
+            <span class="kb-expand"></span>
+          </div>
+          <ul class="source-files hidden" id="files-{{ s.source_type }}"></ul>
+        </li>
+        {% endif %}{% endfor %}
+      </ul>
+      <div class="kb-total">total <b id="kb-total">–</b> chunks indexed</div>
+      <div class="kb-actions">
+        <button class="ghost" id="btn-all">all</button>
+        <button class="ghost" id="btn-none">none</button>
+      </div>
+    </section>
+
+    <section class="rail-block">
+      <h3>mode</h3>
+      <select id="mode" class="mode-select">
+        <option value="">auto-detect</option>
+        <option value="answer">answer</option>
+        <option value="generate">generate test cases</option>
+        <option value="review">review coverage / gaps</option>
+        <option value="rca">root cause analysis</option>
+      </select>
+    </section>
+
+    <section class="rail-block">
+      <h3>ingest <button class="ghost tiny" id="ingest-toggle">open</button></h3>
+      <div id="ingest-panel" class="hidden">
+        <select id="ingest-source" class="mode-select">
+          <option value="">all sources</option>
+          {% for s in sources %}{% if s.active %}
+          <option value="{{ s.num }}">{{ s.num }} · {{ s.label }}</option>
+          {% endif %}{% endfor %}
+        </select>
+        <div class="ingest-row">
+          <button class="primary" id="ingest-run">run ingest</button>
+          <label class="force-label"><input type="checkbox" id="ingest-force"> force</label>
+        </div>
+        <div class="progress hidden" id="ingest-progress"><div class="progress-bar" id="ingest-bar"></div></div>
+        <pre class="ingest-log" id="ingest-log"></pre>
+      </div>
+    </section>
+
+    <div class="rail-foot">
+      <div>llm <span class="mono">{{ llm_model }}</span></div>
+      <div>embed <span class="mono">{{ embed_model }}</span></div>
+      <div class="rail-foot-link"><a href="/architecture" target="_blank">architecture &amp; docs ↗</a></div>
+    </div>
+  </aside>
+
+  <main class="stage">
+    <header class="topbar">
+      <span class="crumb">understand &rarr; retrieve &rarr; rerank &rarr; answer with sources</span>
+      <span class="topbar-right" id="status-line">boot<span class="caret">▌</span></span>
+    </header>
+
+    <div class="thread" id="thread">
+      <div class="hello">
+        <div class="hello-head">
+          <span class="hello-mark">🤖</span>
+          <h1>QABuddy.AI</h1>
+        </div>
+        <p class="hello-sub">Ask anything &mdash; get a <b>cited</b> answer backed by your actual QA assets. Frameworks, test cases,
+           JIRA tickets, PRDs, meeting transcripts, log failures &mdash; your knowledge base, instantly searchable.</p>
+
+        <div class="how">
+          <div class="how-title">How your answer is fetched</div>
+          <div class="how-grid">
+            <div class="how-step">
+              <span class="how-n">1</span>
+              <div><b>Understand</b><span>your question is clarified and rewritten for maximum search coverage</span></div>
+            </div>
+            <div class="how-step">
+              <span class="how-n">2</span>
+              <div><b>Search</b><span>semantic meaning + exact keywords (ticket IDs, exceptions, method names) across your selected sources</span></div>
+            </div>
+            <div class="how-step">
+              <span class="how-n">3</span>
+              <div><b>Rank</b><span>results from both search types merge, then a cross-encoder picks the 6 best chunks</span></div>
+            </div>
+            <div class="how-step">
+              <span class="how-n">4</span>
+              <div><b>Answer</b><span>gpt-oss-120b responds using only those chunks, citing [n] &rarr; file:line, ticket, page or build</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="suggestions">
+          <button class="sug">What caused the checkout 500 errors in production?</button>
+          <button class="sug">Find all P1 security bugs and their current status</button>
+          <button class="sug">Generate test cases for the MVT feature in Experiments</button>
+          <button class="sug">What is KAN-1002 and why is it still flaky?</button>
+          <button class="sug">Show me the root cause of the memory leak in reporting-service</button>
+          <button class="sug">What's our accessibility compliance status for WCAG 2.1 AA?</button>
+          <button class="sug">List all test cases for checkout coupon validation</button>
+          <button class="sug">How do we handle session recording data loss prevention?</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="composer">
+      <div class="composer-box">
+        <textarea id="q" rows="1" placeholder="Ask anything — tests, bugs, frameworks, failures, docs..." autofocus></textarea>
+        <button id="send" class="send" title="send">&uarr;</button>
+      </div>
+      <div class="composer-hint">enter to send · shift+enter for newline · answers always cite their sources</div>
+    </footer>
+  </main>
+
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>

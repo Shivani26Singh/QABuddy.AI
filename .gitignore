@@ -1,0 +1,13 @@
+# Command Code tool config — not needed in repo
+.commandcode/
+
+# Logs directory
+logs/
+
+# Root-level scripts (not QABuddy scripts)
+scripts/
+.vercel_output/
+__pycache__/
+*.pyc
+
+# The QABuddy subfolder has its own .gitignore covering .venv, qdrant_data, data payloads, .env, etc.
